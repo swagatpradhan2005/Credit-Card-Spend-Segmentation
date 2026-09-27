@@ -22,15 +22,15 @@ The final Gold dataset enables analysis of customer spending patterns, dominant 
 
 ### 🔹 Overview
 
-![Overview Dashboard](documentation/screenshots/overview.png)
+![Overview Dashboard](documentation/overview.png)
 
 ### 🔹 Analytics
 
-![Analytics Dashboard](documentation/screenshots/analytics.png)
+![Analytics Dashboard](documentation/analytics.png)
 
 ### 🔹 Segmentation Insights
 
-![Segmentation Dashboard](documentation/screenshots/segmentation.png)
+![Segmentation Dashboard](documentation/segmentation.png)
 
 ---
 
