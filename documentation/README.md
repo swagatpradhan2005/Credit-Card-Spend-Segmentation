@@ -83,8 +83,8 @@ credit_card_spend_segmentation_project/
 
 ## Exact execution order
 
-See `RUN_ORDER.md`. In short: `00 → 01 → 02 → 03 → 04 → 05 → 06`, then
-upload the exported CSV to Snowflake and run the three `snowflake/*.sql`
+See `RUN_ORDER.md`. In short: `00 → 01 → 02 → 03 → 04 → 05 → 06 → 07`, then
+upload the exported CSV to Snowflake and run the remaining two `snowflake/*.sql`
 scripts in numeric order.
 
 ## Bronze rules (what must NOT happen)
