@@ -1,0 +1,37 @@
+======================================================================
+CREDIT CARD SPEND SEGMENTATION -- DATASET VALIDATION REPORT
+======================================================================
+
+---- customers.csv ----
+[PASS] customers row count == 2000 -- got 2000
+[PASS] customer_id range CUST0000-CUST1999, exact & unique
+[PASS] 10 cities x 200 customers each -- {'Delhi': 200, 'Mumbai': 200, 'Chennai': 200, 'Kolkata': 200, 'Pune': 200, 'Jaipur': 200, 'Kochi': 200, 'Surat': 200, 'Indore': 200, 'Patna': 200}
+[PASS] Silver=1000, Gold=500, Platinum=500 -- {'Silver': 1000, 'Gold': 500, 'Platinum': 500}
+[PASS] 5 age bands x 400 customers each -- {'18-25': 400, '26-35': 400, '36-45': 400, '46-55': 400, '56plus': 400}
+
+---- card_txns.csv ----
+[PASS] transaction row count == 121900 -- got 121900
+[PASS] 1500 duplicate transaction rows (extra occurrences of a txn_id) -- got 1500
+[PASS] 400 rows with customer_id = CUST9999 -- got 400
+[PASS] CUST9999 does not exist in customers.csv
+[PASS] 800 'NA' amount rows -- got 800
+[PASS] 600 negative refund amounts -- got 600
+[PASS] 100 'groceries ' (lower+trailing space) rows -- got 100
+[PASS] 100 'DINING' (uppercase) rows -- got 100
+[PASS] 50 ' Fuel' (leading space) rows -- got 50
+[PASS] 250 total spelling-anomaly rows
+    Distinct raw merchant_category values (11): {'groceries ': 100, ' Fuel': 50, 'Travel': 15239, 'Apparel': 15252, 'Electronics': 15252, 'Utilities': 15255, 'DINING': 100, 'Health': 15237, 'Fuel': 15172, 'Groceries': 15122, 'Dining': 15121}
+[PASS] Exactly 8 canonical categories after normalisation -- {'Groceries': 15222, 'Fuel': 15222, 'Travel': 15239, 'Apparel': 15252, 'Electronics': 15252, 'Utilities': 15255, 'Dining': 15221, 'Health': 15237}
+[PASS] Every customer-month has exactly 4 categories (post-normalisation)
+[PASS] Exactly 300 customers switch dominant category between month 3 and 4 -- got 300
+[PASS] The 300 switchers are exactly CUST0000-CUST0299
+[PASS] All 300 switches occur specifically between month 3 and month 4 (stable otherwise) -- 0 stability violations
+[PASS] 500 customers (CUST1500-CUST1999) show spend-vs-count disagreement in ALL 6 months -- got 500
+[PASS] No customers outside CUST1500-CUST1999 show the disagreement in every month -- 0 unexpected
+[PASS] Positive/base amounts are non-zero and numeric
+[PASS] 'NA' rows are strings (not 0 / null)
+[PASS] Negative amounts remain in raw dataset (not abs'd / removed)
+
+======================================================================
+[PASS] ALL VALIDATION CHECKS PASSED
+======================================================================

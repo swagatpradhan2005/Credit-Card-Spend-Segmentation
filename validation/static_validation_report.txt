@@ -1,0 +1,137 @@
+======================================================================
+CREDIT CARD SPEND SEGMENTATION -- STATIC / PRE-EXECUTION VALIDATION
+======================================================================
+
+SCOPE OF THIS REPORT
+---------------------
+This package was assembled without live Databricks or Snowflake access.
+Two different kinds of validation are reflected here, and they are NOT
+the same thing:
+
+  1. SOURCE-DATA VALIDATION (actually executed, results below):
+     customers.csv and card_txns.csv were re-read directly from disk and
+     independently re-checked, row by row, against every count and
+     behaviour in the Topic 09 specification. These checks were run for
+     real, against the actual uploaded files, moments before this report
+     was written.
+
+  2. PIPELINE STATIC REVIEW (code-level only, NOT executed):
+     The Databricks notebooks (databricks/00-06) and Snowflake scripts
+     (snowflake/01-03) have been written and manually reviewed for
+     column-name, table-name, path and dependency consistency, and for
+     agreement with the arithmetic below. They have NOT been run against
+     a live Databricks workspace or Snowflake account, so no Bronze,
+     Silver, or Gold table has actually been created, and no Snowflake
+     COPY INTO has actually executed. Run 05_validation.py yourself,
+     inside your own workspace, to get the equivalent PASS/FAIL results
+     for the executed pipeline.
+
+======================================================================
+PART 1 -- SOURCE-DATA VALIDATION (executed against the uploaded files)
+======================================================================
+
+---- customers.csv ----
+[PASS] customers row count == 2000 -- got 2000
+[PASS] customer_id range CUST0000-CUST1999, exact & unique
+[PASS] 10 cities x 200 customers each -- {'Delhi': 200, 'Mumbai': 200, 'Chennai': 200, 'Kolkata': 200, 'Pune': 200, 'Jaipur': 200, 'Kochi': 200, 'Surat': 200, 'Indore': 200, 'Patna': 200}
+[PASS] Silver=1000, Gold=500, Platinum=500 -- {'Silver': 1000, 'Gold': 500, 'Platinum': 500}
+[PASS] 5 age bands x 400 customers each -- {'18-25': 400, '26-35': 400, '36-45': 400, '46-55': 400, '56plus': 400}
+
+---- card_txns.csv ----
+[PASS] transaction row count == 121900 -- got 121900
+[PASS] 1500 duplicate transaction rows (extra occurrences of a txn_id) -- got 1500
+[PASS] 400 rows with customer_id = CUST9999 -- got 400
+[PASS] CUST9999 does not exist in customers.csv
+[PASS] 800 'NA' amount rows -- got 800
+[PASS] 600 negative refund amounts -- got 600
+[PASS] 100 'groceries ' (lower+trailing space) rows -- got 100
+[PASS] 100 'DINING' (uppercase) rows -- got 100
+[PASS] 50 ' Fuel' (leading space) rows -- got 50
+[PASS] 250 total spelling-anomaly rows
+    Distinct raw merchant_category values (11): {'groceries ': 100, ' Fuel': 50, 'Travel': 15239,
+    'Apparel': 15252, 'Electronics': 15252, 'Utilities': 15255, 'DINING': 100, 'Health': 15237,
+    'Fuel': 15172, 'Groceries': 15122, 'Dining': 15121}
+[PASS] Exactly 8 canonical categories after normalisation -- {'Groceries': 15222, 'Fuel': 15222,
+    'Travel': 15239, 'Apparel': 15252, 'Electronics': 15252, 'Utilities': 15255, 'Dining': 15221,
+    'Health': 15237}
+[PASS] Every customer-month has exactly 4 categories (post-normalisation)
+[PASS] Exactly 300 customers switch dominant category between month 3 and 4 -- got 300
+[PASS] The 300 switchers are exactly CUST0000-CUST0299
+[PASS] All 300 switches occur specifically between month 3 and month 4 (stable otherwise) -- 0 stability violations
+[PASS] 500 customers (CUST1500-CUST1999) show spend-vs-count disagreement in ALL 6 months -- got 500
+[PASS] No customers outside CUST1500-CUST1999 show the disagreement in every month -- 0 unexpected
+[PASS] Positive/base amounts are non-zero and numeric
+[PASS] 'NA' rows are strings (not 0 / null)
+[PASS] Negative amounts remain in raw dataset (not abs'd / removed)
+
+RESULT: ALL SOURCE-DATA CHECKS PASSED.
+
+This confirms the source data itself is a valid foundation for the
+Bronze -> Silver -> Gold pipeline: every count and behaviour the pipeline
+code assumes (121,900 Bronze rows, 1,500 duplicates, 400 orphans, 800 NA
+amounts, 600 negative refunds, 250 spelling anomalies, 300 switchers,
+500 disagreement customers) is actually present in customers.csv and
+card_txns.csv as uploaded.
+
+======================================================================
+PART 2 -- PIPELINE STATIC REVIEW (code-level, not executed)
+======================================================================
+
+[REVIEWED] 00_project_config.py defines every catalog/schema/volume/table
+    name and path exactly once; 01-06 reference these variables only
+    (verified: no repeated/hardcoded path or table name outside this file).
+
+[REVIEWED] 01_setup_databricks.py uses CREATE CATALOG/SCHEMA/VOLUME
+    IF NOT EXISTS and dbutils.fs.mkdirs (both idempotent).
+
+[REVIEWED] 02_bronze_ingestion.py reads all columns as STRING, sets
+    ignoreLeadingWhiteSpace/ignoreTrailingWhiteSpace to false, and asserts
+    row counts of 2,000 and 121,900 before proceeding.
+
+[REVIEWED] 03_silver_transformation.py uses try_cast (not cast) for the
+    amount conversion; the dedupe/orphan/invalid-amount rejections use
+    disjoint row sets, so the documented transition arithmetic
+    (121,900 -> 120,400 -> 120,000 -> 119,200) is internally consistent;
+    spend is defined once as the signed sum of amount with no ABS() call
+    anywhere in the file.
+
+[REVIEWED] 04_gold_transformation.py computes dominance with
+    ROW_NUMBER() OVER (PARTITION BY customer_id, month ORDER BY spend
+    DESC, merchant_category ASC) -- not GROUP BY MAX(spend) joined back
+    to detail -- so a spend tie cannot produce two dominant rows or grow
+    the table past 48,000.
+
+[REVIEWED] 05_validation.py checks every count in EXPECTED_RESULTS.md and
+    raises (does not just print) on any failure, so 06_export_gold.py
+    cannot silently run after a failed validation if the job JSON's
+    dependency chain is respected.
+
+[REVIEWED] 06_export_gold.py asserts the Gold row count before writing,
+    coalesces to a single part file, and asserts exactly one file exists
+    in the export folder afterward.
+
+[REVIEWED] snowflake/01-03.sql: no embedded credentials; COPY INTO in
+    02_snowflake_load.sql does not pass FORCE = TRUE, so Snowflake's load
+    metadata makes a second run against the same file a zero-row no-op;
+    03_required_snowflake_questions.sql uses QUALIFY ROW_NUMBER() for
+    dominance (Q2) and AVG(spend_share) rather than
+    SUM(spend)/SUM(customer_month_spend) for the per-customer share (Q1).
+
+[NOT EXECUTED] No Databricks cluster, catalog, schema, volume, or table
+    has actually been created from this package. No Snowflake stage,
+    file format, or table has actually been created. No COPY INTO has
+    actually run. Actual Bronze/Silver/Gold row counts, Gold export
+    row/column confirmation, and the Snowflake COPY_HISTORY /
+    row-count queries can only be obtained by running this package for
+    real in your own workspace.
+
+======================================================================
+OVERALL STATUS
+======================================================================
+Source data: VALIDATED (executed checks, all PASS).
+Pipeline code: STATICALLY REVIEWED, INTERNALLY CONSISTENT, NOT YET RUN.
+Action required before submission: execute databricks/00-06 in order in a
+real Databricks workspace, then snowflake/01-03 in a real Snowflake
+account, and replace this file's Part 2 with the actual PASS/FAIL output
+of 05_validation.py plus the actual Snowflake verification query results.
+======================================================================

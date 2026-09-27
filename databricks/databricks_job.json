@@ -1,0 +1,100 @@
+{
+  "_comment_readme": [
+    "This is a JOB DEFINITION TEMPLATE, not a job that has been created or",
+    "run. Import it into Databricks Workflows (Workflows > Jobs > Import),",
+    "then fill in your own workspace path prefix, cluster/job-cluster spec",
+    "and (optionally) a real schedule before running it.",
+    "Replace <YOUR_WORKSPACE_PATH> below with the folder you upload the",
+    "databricks/ notebooks into, e.g. /Workspace/Users/you@example.com/credit_card_spend_segmentation_project/databricks",
+    "Replace <YOUR_JOB_CLUSTER_SPEC> with a real node_type_id / spark_version",
+    "for your workspace -- none is hardcoded here."
+  ],
+
+  "name": "credit_card_spend_segmentation_pipeline",
+
+  "job_clusters": [
+    {
+      "job_cluster_key": "ccss_job_cluster",
+      "new_cluster": {
+        "spark_version": "<YOUR_JOB_CLUSTER_SPEC_SPARK_VERSION>",
+        "node_type_id": "<YOUR_JOB_CLUSTER_SPEC_NODE_TYPE>",
+        "num_workers": 1,
+        "data_security_mode": "SINGLE_USER"
+      }
+    }
+  ],
+
+  "tasks": [
+    {
+      "task_key": "setup",
+      "notebook_task": {
+        "notebook_path": "<YOUR_WORKSPACE_PATH>/01_setup_databricks",
+        "source": "WORKSPACE"
+      },
+      "job_cluster_key": "ccss_job_cluster"
+    },
+    {
+      "task_key": "bronze",
+      "depends_on": [{ "task_key": "setup" }],
+      "notebook_task": {
+        "notebook_path": "<YOUR_WORKSPACE_PATH>/02_bronze_ingestion",
+        "source": "WORKSPACE"
+      },
+      "job_cluster_key": "ccss_job_cluster"
+    },
+    {
+      "task_key": "silver",
+      "depends_on": [{ "task_key": "bronze" }],
+      "notebook_task": {
+        "notebook_path": "<YOUR_WORKSPACE_PATH>/03_silver_transformation",
+        "source": "WORKSPACE"
+      },
+      "job_cluster_key": "ccss_job_cluster"
+    },
+    {
+      "task_key": "gold",
+      "depends_on": [{ "task_key": "silver" }],
+      "notebook_task": {
+        "notebook_path": "<YOUR_WORKSPACE_PATH>/04_gold_transformation",
+        "source": "WORKSPACE"
+      },
+      "job_cluster_key": "ccss_job_cluster"
+    },
+    {
+      "task_key": "validation",
+      "depends_on": [{ "task_key": "gold" }],
+      "notebook_task": {
+        "notebook_path": "<YOUR_WORKSPACE_PATH>/05_validation",
+        "source": "WORKSPACE"
+      },
+      "job_cluster_key": "ccss_job_cluster"
+    },
+    {
+      "task_key": "export",
+      "depends_on": [{ "task_key": "validation" }],
+      "notebook_task": {
+        "notebook_path": "<YOUR_WORKSPACE_PATH>/06_export_gold",
+        "source": "WORKSPACE"
+      },
+      "job_cluster_key": "ccss_job_cluster"
+    }
+  ],
+
+  "_comment_dependency_order": [
+    "setup -> bronze -> silver -> gold -> validation -> export.",
+    "Each task's depends_on means Databricks Workflows will NOT start it",
+    "until the upstream task finishes SUCCESSFULLY. A failure anywhere in",
+    "the chain stops all downstream tasks automatically -- validation is",
+    "guaranteed to run before export, and export is guaranteed to run only",
+    "if validation passed (05_validation.py raises on any failed check)."
+  ],
+
+  "schedule": {
+    "_comment": "Placeholder only -- no schedule has actually been created. Set quartz_cron_expression and timezone_id yourself, and pause_status to UNPAUSED, when you are ready to schedule real runs.",
+    "quartz_cron_expression": "0 0 * * * ?",
+    "timezone_id": "UTC",
+    "pause_status": "PAUSED"
+  },
+
+  "max_concurrent_runs": 1
+}
