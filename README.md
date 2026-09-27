@@ -603,9 +603,9 @@ After successful validation:
 ```text
 Databricks Gold Export
         ↓
-Upload GOLD_CUSTOMER_CATEGORY_MONTH.csv
-        ↓
 Snowflake 01_snowflake_objects.sql
+        ↓
+Upload GOLD_CUSTOMER_CATEGORY_MONTH.csv
         ↓
 Snowflake 02_snowflake_load.sql
         ↓
@@ -650,7 +650,7 @@ Snowflake 03_required_snowflake_questions.sql
 The project dashboard is hosted separately as a public web application.
 
 **Live Demo:**
-`https://credit-card-spend-se-or46.bolt.host`
+`[ADD_YOUR_BOLT_HOSTED_LINK_HERE](https://credit-card-spend-se-or46.bolt.host)`
 
 > The hosted dashboard is a presentation layer for the Databricks and Snowflake project. The core data engineering pipeline and SQL implementation are maintained in this repository.
 
