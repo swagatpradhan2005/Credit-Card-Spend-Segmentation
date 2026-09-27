@@ -26,7 +26,7 @@ This project builds a structured pipeline to **ingest, clean, validate, transfor
 
 ### 🔹 Segmentation
 
-[Segmentation Dashboard](documentation/segmentation.png)
+(documentation/segmentation.png)
 
 ---
 
