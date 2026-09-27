@@ -18,15 +18,15 @@ This project builds a structured pipeline to **ingest, clean, validate, transfor
 
 ### 🔹 Overview
 
-[Overview Dashboard](documentation/overview.png)
+![Overview Dashboard](documentation/overview.png)
 
 ### 🔹 Analytics
 
-[Analytics Dashboard](documentation/analytics.png)
+![Analytics Dashboard](documentation/analytics.png)
 
 ### 🔹 Segmentation
 
-(documentation/segmentation.png)
+![Segmentation Dashboard](documentation/segmentation.png)
 
 ---
 
@@ -255,7 +255,7 @@ credit_card_spend_segmentation_project/
 
 ## 🌐 Live Dashboard
 
-🔗 [**View Live Dashboard**](https://credit-card-spend-se-or46.bolt.host/)
+🔗 [**Live Dashboard**](https://credit-card-spend-se-or46.bolt.host/)
 
 The dashboard is a presentation layer for the Databricks and Snowflake project. The core data engineering pipeline and SQL implementation are maintained in this repository.
 
